@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Wiregraph
+Comment=Pipewire Audio Routing
+GenericName=Audio Routing Interface
+Exec=wiregraph
+Icon=wiregraph
+Type=Application
+Terminal=false
+Categories=Audio;
+Keywords=pipewire;audio;routing;
+StartupNotify=true
