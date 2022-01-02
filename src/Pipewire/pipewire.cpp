@@ -1,9 +1,13 @@
 #include "pipewire.hpp"
+#include <spa/utils/dict.h>
 
 namespace Pipewire {
 
 Api::~Api() {
 	pw_thread_loop_lock(data.loop);
+	for (auto n : data.nodes) {
+		pw_proxy_destroy(reinterpret_cast<struct pw_proxy*>(n));
+	}
 	pw_proxy_destroy(reinterpret_cast<struct pw_proxy*>(data.device));
 	pw_proxy_destroy(reinterpret_cast<struct pw_proxy*>(data.registry));
 	pw_core_disconnect(data.core);
@@ -49,6 +53,12 @@ void Api::registry_event_global(void* data, uint32_t id, uint32_t permissions, c
 			// pw_device_subscribe_params(d->device, );
 			qDebug() << "added device";
 		}
+	} else if (spa_streq(type, PW_TYPE_INTERFACE_Node)) {
+		auto node = static_cast<pw_node*>(pw_registry_bind(d->registry, id, type, PW_VERSION_NODE, 0));
+		d->nodes.push_back(node);
+		d->node_listeners.emplace_back(std::make_unique<spa_hook>());
+		pw_node_add_listener(node, d->node_listeners.back().get(), &node_events, data);
+		qDebug() << "added node";
 	} else {
 		qDebug() << "global registry event" << type;
 	}
@@ -56,11 +66,16 @@ void Api::registry_event_global(void* data, uint32_t id, uint32_t permissions, c
 
 void Api::registry_event_global_remove(void *object, uint32_t id) {
 	Database::get()->remove_item(id);
+	// TODO: Remove from vector
 }
 
 void Api::device_event_info(void *object, const struct pw_device_info *info) {
 	struct Data* d = static_cast<struct Data*>(object);
 	qDebug() << "device info changed" << info->id;
+	const spa_dict_item* it;
+	spa_dict_for_each(it, info->props) {
+		qDebug() << it->key << it->value;
+	}
 
 	if (info->change_mask & PW_DEVICE_CHANGE_MASK_PARAMS) {
 		for (uint32_t i = 0; i < info->n_params; ++i) {
@@ -71,7 +86,28 @@ void Api::device_event_info(void *object, const struct pw_device_info *info) {
 }
 
 void Api::device_event_param(void *object, int seq, uint32_t id, uint32_t index, uint32_t next, const struct spa_pod *param) {
-	qDebug() << "param changed" << param->type;
+	qDebug() << "device param changed" << param->type;
+}
+
+void Api::node_event_info(void *object, const struct pw_node_info *info) {
+	struct Data* d = static_cast<struct Data*>(object);
+	qDebug() << "node info changed" << info->id;
+	const spa_dict_item* it;
+	spa_dict_for_each(it, info->props) {
+		qDebug() << it->key << it->value;
+	}
+
+	if (info->change_mask & PW_NODE_CHANGE_MASK_PARAMS) {
+		for (uint32_t i = 0; i < info->n_params; ++i) {
+			const auto id = info->params[i].id;
+			// TODO: Use proxy
+			// pw_node_enum_params(d->nodes, 0, id, 0, -1, nullptr);
+		}
+	}
+}
+
+void Api::node_event_param(void *object, int seq, uint32_t id, uint32_t index, uint32_t next, const struct spa_pod *param) {
+	qDebug() << "node param changed" << param->type;
 }
 
 std::string Api::get_headers_version()

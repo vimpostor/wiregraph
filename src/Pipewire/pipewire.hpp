@@ -5,14 +5,16 @@
 namespace Pipewire {
 
 struct Data {
-	struct pw_thread_loop* loop;
-	struct pw_context* context;
-	struct pw_core_info* info;
-	struct pw_core* core;
-	struct pw_registry* registry;
+	struct pw_thread_loop* loop = nullptr;
+	struct pw_context* context = nullptr;
+	struct pw_core_info* info = nullptr;
+	struct pw_core* core = nullptr;
+	struct pw_registry* registry = nullptr;
 	struct spa_hook registry_listener;
-	struct pw_device* device;
+	struct pw_device* device = nullptr;
 	struct spa_hook device_listener;
+	std::vector<pw_node*> nodes;
+	std::vector<std::unique_ptr<spa_hook>> node_listeners;
 };
 
 class Api {
@@ -37,6 +39,14 @@ public:
 		.version = PW_VERSION_DEVICE_EVENTS,
 		.info = device_event_info,
 		.param = device_event_param
+	};
+
+	static void node_event_info(void *object, const struct pw_node_info *info);
+	static void node_event_param(void *object, int seq, uint32_t id, uint32_t index, uint32_t next, const struct spa_pod *param);
+	constexpr static const struct pw_node_events node_events = {
+		.version = PW_VERSION_NODE_EVENTS,
+		.info = node_event_info,
+		.param = node_event_param
 	};
 
 	std::string get_headers_version();
