@@ -20,9 +20,6 @@ Api::~Api() {
 bool Api::init() {
 	pw_init(nullptr, nullptr);
 
-	headers_version = pw_get_headers_version();
-	library_version = pw_get_library_version();
-
 	data.loop = pw_thread_loop_new("wiregraph", nullptr);
 
 	pw_thread_loop_lock(data.loop);
@@ -79,12 +76,12 @@ void Api::device_event_param(void *object, int seq, uint32_t id, uint32_t index,
 
 std::string Api::get_headers_version()
 {
-	return headers_version;
+	return pw_get_headers_version();
 }
 
 std::string Api::get_library_version()
 {
-	return library_version;
+	return pw_get_library_version();
 }
 
 }

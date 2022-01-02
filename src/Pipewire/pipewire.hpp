@@ -43,8 +43,6 @@ public:
 	std::string get_library_version();
 private:
 	Data data;
-	std::string headers_version;
-	std::string library_version;
 };
 };
 
