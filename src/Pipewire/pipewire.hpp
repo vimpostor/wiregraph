@@ -11,10 +11,20 @@ struct Data {
 	struct pw_core* core = nullptr;
 	struct pw_registry* registry = nullptr;
 	struct spa_hook registry_listener;
-	struct pw_device* device = nullptr;
-	struct spa_hook device_listener;
-	std::vector<pw_node*> nodes;
-	std::vector<std::unique_ptr<spa_hook>> node_listeners;
+};
+
+struct Proxydata {
+	struct Data* data;
+	struct pw_proxy* proxy;
+	uint32_t id;
+	uint32_t permissions;
+	uint32_t version;
+	char* type;
+	void* info;
+	pw_destroy_t destroy;
+	struct spa_hook proxy_listener;
+	struct spa_hook object_listener;
+	struct spa_list param_list;
 };
 
 class Api {
@@ -30,7 +40,15 @@ public:
 	constexpr static const struct pw_registry_events registry_events = {
 		.version = PW_VERSION_REGISTRY_EVENTS,
 		.global = registry_event_global,
-		.global_remove = registry_event_global_remove
+		.global_remove = registry_event_global_remove,
+	};
+
+	static void destroy_proxy(void* data);
+	static void removed_proxy(void* data);
+	constexpr static const struct pw_proxy_events proxy_events = {
+		.version = PW_VERSION_PROXY_EVENTS,
+		.destroy = destroy_proxy,
+		.removed = removed_proxy,
 	};
 
 	static void device_event_info(void *object, const struct pw_device_info *info);
@@ -38,7 +56,7 @@ public:
 	constexpr static const struct pw_device_events device_events = {
 		.version = PW_VERSION_DEVICE_EVENTS,
 		.info = device_event_info,
-		.param = device_event_param
+		.param = device_event_param,
 	};
 
 	static void node_event_info(void *object, const struct pw_node_info *info);
@@ -46,8 +64,10 @@ public:
 	constexpr static const struct pw_node_events node_events = {
 		.version = PW_VERSION_NODE_EVENTS,
 		.info = node_event_info,
-		.param = node_event_param
+		.param = node_event_param,
 	};
+
+	static void clear_params(struct Proxydata* data);
 
 	std::string get_headers_version();
 	std::string get_library_version();
