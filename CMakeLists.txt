@@ -33,7 +33,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${QT_PREFIXED_MODULES} PkgConfig::
 
 # install
 include(GNUInstallDirs)
-install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(TARGETS ${PROJECT_NAME} RUNTIME)
 
 install(FILES "assets/${PROJECT_NAME}.desktop" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/applications")
 
